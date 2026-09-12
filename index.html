@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spireven</title>
+    <style>
+        :root {
+            --bg-servers: #202225;
+            --bg-channels: #2f3136;
+            --bg-chat: #36393f;
+            --bg-input: #40444b;
+            --bg-modal: #36393f;
+            --text-main: #dcddde;
+            --text-muted: #8e9297;
+            --accent: #5865f2;
+            --accent-hover: #4752c4;
+            --danger: #ed4245;
+            --success: #3ba55d;
+            --border: #202225;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-chat);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* EKRAN LOGOWANIA / REJESTRACJI */
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-chat);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-card {
+            background-color: #2f3136;
+            padding: 32px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        .auth-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 10px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-google {
+            background-color: #ffffff;
+            color: #2e2e2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .btn-google:hover {
+            background-color: #dcdcdc;
+        }
+
+        .auth-divider {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            line-height: 0.1em;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .auth-divider span {
+            background: #2f3136;
+            padding: 0 10px;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .auth-switch span {
+            color: var(--accent);
+            cursor: pointer;
+        }
+        .auth-switch span:hover {
+            text-decoration: underline;
+        }
+
+        /* GŁÓWNA APLIKACJA */
+        #app-screen {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* SERWERY */
+        .servers-sidebar {
+            width: 72px;
+            background-color: var(--bg-servers);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 12px;
+            gap: 8px;
+            border-right: 1px solid rgba(0,0,0,0.2);
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--bg-channels);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            position: relative;
+        }
+
+        .server-icon:hover, .server-icon.active {
+            border-radius: 16px;
+            background-color: var(--accent);
+        }
+
+        .server-icon.add-server {
+            background-color: var(--bg-channels);
+            color: var(--success);
+            font-size: 24px;
+        }
+        .server-icon.add-server:hover {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .server-icon.dm-icon {
+            background-color: var(--bg-channels);
+            color: var(--text-muted);
+        }
+        .server-icon.dm-icon:hover, .server-icon.dm-icon.active {
+            background-color: var(--accent);
+            color: white;
+            border-radius: 16px;
+        }
+
+        .divider {
+            width: 32px;
+            height: 2px;
+            background-color: var(--bg-channels);
+            border-radius: 1px;
+            margin: 4px 0;
+        }
+
+        /* KANAŁY / NAWIGACJA BOCZNA */
+        .channels-sidebar {
+            width: 240px;
+            background-color: var(--bg-channels);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+
+        .channels-list {
+            padding: 16px 8px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .channel-category {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        .channel-item {
+            padding: 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-bottom: 2px;
+            transition: 0.1s;
+        }
+
+        .channel-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .channel-item.active {
+            background-color: rgba(255,255,255,0.1);
+            color: var(--text-main);
+        }
+
+        /* PANEL UŻYTKOWNIKA NA DOLE KANAŁÓW */
+        .user-panel {
+            height: 52px;
+            background-color: #292b2f;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            max-width: 110px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: 0.2s;
+        }
+        .logout-btn:hover {
+            color: var(--danger);
+        }
+
+        /* CZAT / GŁÓWNY OBSZAR */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-chat);
+        }
+
+        .chat-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: white;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .message-content {
+            color: var(--text-main);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* INPUT */
+        .chat-input-area {
+            padding: 0 16px 24px 16px;
+        }
+
+        .chat-input-wrapper {
+            background-color: var(--bg-input);
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* KONTAKTY / ZNAJOMI */
+        .contacts-container {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .add-contact-box {
+            display: flex;
+            gap: 10px;
+            max-width: 500px;
+        }
+
+        .contact-list-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 500px;
+        }
+
+        .contact-card {
+            background-color: #2f3136;
+            padding: 12px 16px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+        }
+
+        .modal {
+            background-color: var(--bg-modal);
+            width: 440px;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            text-decoration: underline;
+        }
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- EKRAN LOGOWANIA / REJESTRACJI -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2 class="auth-title" id="auth-title">Witaj w Spireven</h2>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="auth-email" class="form-input" placeholder="twoj@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Hasło</label>
+                <input type="password" id="auth-password" class="form-input" placeholder="••••••••">
+            </div>
+            <button class="btn" id="auth-submit-btn" onclick="handleAuth()">Zaloguj się</button>
+            
+            <div class="auth-divider"><span>lub</span></div>
+            
+            <button class="btn btn-google" onclick="loginWithGoogle()">
+                <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.86 2.07-1.82 2.71v2.26h2.94c1.72-1.58 2.72-3.9 2.72-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.94-2.26c-.81.54-1.84.86-3.02.86-2.34 0-4.33-1.58-5.04-3.71H.92v2.33C2.41 15.96 5.44 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.71c-.18-.54-.28-1.12-.28-1.71s.1-1.17.28-1.71V4.96H.92C.33 6.14 0 7.52 0 9s.33 2.86.92 4.04l3.04-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0 5.44 0 2.41 2.04.92 4.96l3.04 2.33c.71-2.13 2.7-3.71 5.04-3.71z"/></svg>
+                Zaloguj przez Google
+            </button>
+
+            <div class="auth-switch" id="auth-switch-text">
+                Nie masz konta? <span onclick="toggleAuthMode()">Zarejestruj się</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- GŁÓWNA APLIKACJA -->
+    <div id="app-screen" class="hidden">
+
+        <!-- Panel Serwerów -->
+        <div class="servers-sidebar" id="servers-sidebar">
+            <div class="server-icon dm-icon active" title="Wiadomości Prywatne / Kontakty" onclick="switchumuzaViewToDM()">💬</div>
+            <div class="divider"></div>
+            <div class="server-icon add-server" title="Dodaj Serwer" onclick="openServerModal()">+</div>
+        </div>
+
+        <!-- Panel Kanałów / Zakładek -->
+        <div class="channels-sidebar">
+            <div class="server-header" id="sidebar-header">Spireven</div>
+            <div class="channels-list" id="channels-list"></div>
+            
+            <!-- Dolny panel konta -->
+            <div class="user-panel">
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar-initial">U</div>
+                    <div class="user-name" id="user-display-name">Użytkownik</div>
+                </div>
+                <button class="logout-btn" title="Wyloguj się" onclick="logoutUser()">⎋</button>
+            </div>
+        </div>
+
+        <!-- Główny Czat / Ekran -->
+        <div class="chat-area">
+            <div class="chat-header" id="current-channel-title"># ogólny</div>
+            
+            <div class="messages-container" id="messages"></div>
+
+            <div class="chat-input-area" id="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="message-input" class="chat-input" placeholder="Napisz coś..." onkeypress="handleKeyPress(event)">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL TWORZENIA SERWERA -->
+    <div id="server-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-title">Utwórz swój serwer</div>
+            <div class="form-group">
+                <label class="form-label">Nazwa serwera</label>
+                <input type="text" id="new-server-name" class="form-input" placeholder="np. Tajna Baza">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeServerModal()">Anuluj</button>
+                <button class="btn-primary" onclick="createServer()">Utwórz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skrypty Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, getDocs, doc, setDoc, getDoc, arrayUnion, updateDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBl5sQLgA6h38YYiNh8jJI9R78ShAHc_0",
+            authDomain: "spireven-chat.firebaseapp.com",
+            projectId: "spireven-chat",
+            storageBucket: "spireven-chat.firebasestorage.app",
+            messagingSenderId: "707005448701",
+            appId: "1:707005448701:web:760be2c272c706ed309994",
+            measurementId: "G-RF8ZB1E3F9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let isRegistering = false;
+        let currentView = "dm";
+        let currentChannel = "general";
+        let messageUnsubscribe = null;
+
+        window.toggleAuthMode = function() {
+            isRegistering = !isRegistering;
+            document.getElementById('auth-title').innerText = isRegistering ? "Rejestracja w Spireven" : "Witaj w Spireven";
+            document.getElementById('auth-submit-btn').innerText = isRegistering ? "Zarejestruj się" : "Zaloguj się";
+            document.getElementById('auth-switch-text').innerHTML = isRegistering 
+                ? `Masz już konto? <span onclick="toggleAuthMode()">Zaloguj się</span>`
+                : `Nie masz konta? <span onclick="toggleAuthMode()">Zarejestruj się</span>`;
+        }
+
+        window.handleAuth = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+            if(!email || !password) return alert("Wypełnij wszystkie pola!");
+
+            try {
+                if(isRegistering) {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await setDoc(doc(db, "users", userCredential.user.uid), {
+                        email: email,
+                        username: email.split('@')[0],
+                        contacts: []
+                    });
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                alert("Błąd: " + error.message);
+            }
+        }
+
+        // Logowanie przez Google
+        window.loginWithGoogle = async function() {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                // Sprawdź czy użytkownik ma już dokument w bazie, jeśli nie - utwórz
+                const userRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userRef);
+                if (!userDoc.exists()) {
+                    await setDoc(userRef, {
+                        email: user.email,
+                        username: user.displayName || user.email.split('@')[0],
+                        contacts: []
+                    });
+                }
+            } catch (error) {
+                alert("Błąd logowania Google: " + error.message);
+            }
+        }
+
+        window.logoutUser = function() {
+            signOut(auth);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : { username: user.displayName || user.email.split('@')[0] };
+                
+                document.getElementById('user-display-name').innerText = userData.username;
+                document.getElementById('user-avatar-initial').innerText = userData.username.charAt(0).toUpperCase();
+
+                loadUserServers();
+                switchumuzaViewToDM();
+            } else {
+                currentUser = null;
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('hidden');
+            }
+        });
+
+        window.switchumuzaViewToDM = function() {
+            currentView = "dm";
+            document.querySelectorAll('.server-icon').forEach(el => el.classList.remove('active'));
+            document.querySelector('.dm-icon').classList.add('active');
+            
+            document.getElementById('sidebar-header').innerText = "Wiadomości Prywatne";
+            document.getElementById('current-channel-title').innerText = "Kontakty i Znajomi";
+            document.getElementById('chat-input-area').classList.add('hidden');
+            
+            if(messageUnsubscribe) messageUnsubscribe();
+            renderContactsView();
+        }
+
+        async function renderContactsView() {
+            const container = document.getElementById('messages');
+            container.innerHTML = `
+                <div class="contacts-container">
+                    <h3 style="color:white; font-size:16px;">Dodaj znajomego</h3>
+                    <div class="add-contact-box">
+                        <input type="text" id="contact-email-input" class="form-input" placeholder="Wpisz email znajomego">
+                        <button class="btn-primary" onclick="addContact()" style="margin-top:0; width:auto;">Dodaj</button>
+                    </div>
+                    <h3 style="color:white; font-size:16px; margin-top:10px;">Twoje Kontakty</h3>
+                    <div class="contact-list-items" id="contact-list-box">
+                        <p style="color:var(--text-muted);">Ładowanie kontaktów...</p>
+                    </div>
+                </div>
+            `;
+            loadContactsList();
+        }
+
+        window.addContact = async function() {
+            const emailInput = document.getElementById('contact-email-input');
+            const targetEmail = emailInput.value.trim();
+            if(!targetEmail) return;
+
+            const usersRef = collection(db, "users");
+            const q = query(usersRef);
+            const querySnapshot = await getDocs(q);
+            let targetId = null;
+            
+            querySnapshot.forEach((docSnap) => {
+                if(docSnap.data().email === targetEmail) {
+                    targetId = docSnap.id;
+                }
+            });
+
+            if(!targetId) {
+                alert("Nie znaleziono użytkownika o takim emailu!");
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    contacts: arrayUnion({ uid: targetId, email: targetEmail })
+                });
+                emailInput.value = "";
+                alert("Dodano do kontaktów!");
+                loadContactsList();
+            } catch(e) {
+                alert("Błąd dodawania: " + e.message);
+            }
+        }
+
+        async function loadContactsList() {
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const contacts = userDoc.exists() ? (userDoc.data().contacts || []) : [];
+            const box = document.getElementById('contact-list-box');
+            
+            if(contacts.length === 0) {
+                box.innerHTML = `<p style="color:var(--text-muted); font-size:14px;">Brak kontaktów. Dodaj kogoś powyżej!</p>`;
+                return;
+            }
+
+            box.innerHTML = '';
+            contacts.forEach(c => {
+                box.innerHTML += `
+                    <div class="contact-card">
+                        <span style="color:white; font-weight:600;">${c.email}</span>
+                        <span style="color:var(--success); font-size:12px;">● Online</span>
+                    </div>
+                `;
+            });
+        }
+
+        window.openServerModal = function() {
+            document.getElementById('server-modal').classList.remove('hidden');
+        }
+        window.closeServerModal = function() {
+            document.getElementById('server-modal').classList.add('hidden');
+        }
+
+        window.createServer = async function() {
+            const nameInput = document.getElementById('new-server-name');
+            const name = nameInput.value.trim();
+            if(!name) return;
+
+            try {
+                await addDoc(collection(db, "servers"), {
+                    name: name,
+                    ownerId: currentUser.uid,
+                    createdAt: serverTimestamp()
+                });
+                nameInput.value = "";
+                closeServerModal();
+                loadUserServers();
+            } catch(e) {
+                alert("Błąd tworzenia serwera: " + e.message);
+            }
+        }
+
+        async function loadUserServers() {
+            const sidebar = document.getElementById('servers-sidebar');
+            sidebar.innerHTML = `
+                <div class="server-icon dm-icon" title="Wiadomości Prywatne / Kontakty" onclick="switchumuzaViewToDM()">💬</div>
+                <div class="divider"></div>
+            `;
+
+            const querySnapshot = await getDocs(collection(db, "servers"));
+            querySnapshot.forEach((docSnap) => {
+                const server = docSnap.data();
+                const serverId = docSnap.id;
+                const initial = server.name.charAt(0).toUpperCase();
+
+                const icon = document.createElement('div');
+                icon.className = 'server-icon';
+                icon.innerText = initial;
+                icon.title = server.name;
+                icon.onclick = () => selectServer(serverId, server.name);
+                icon.id = `server-icon-${serverId}`;
+                sidebar.appendChild(icon);
+            });
+
+            const addBtn = document.createElement('div');
+            addBtn.className = 'server-icon add-server';
+            addBtn.innerHTML = '+';
+            addBtn.title = 'Dodaj Serwer';
+            addBtn.onclick = openServerModal;
+            sidebar.appendChild(addBtn);
+        }
+
+        window.selectServer = function(serverId, serverName) {
+            currentView = serverId;
+            document.querySelectorAll('.server-icon').forEach(el => el.classList.remove('active'));
+            const activeIcon = document.getElementById(`server-icon-${serverId}`);
+            if(activeIcon) activeIcon.classList.add('active');
+
+            document.getElementById('sidebar-header').innerText = serverName;
+            document.getElementById('chat-input-area').classList.remove('hidden');
+            
+            renderServerChannels(serverId, serverName);
+        }
+
+        function renderServerChannels(serverId, serverName) {
+            const list = document.getElementById('channels-list');
+            list.innerHTML = `
+                <div class="channel-category">Kanały tekstowe</div>
+                <div class="channel-item active" onclick="switchChannel('${serverId}', 'general')"># ogólny</div>
+                <div class="channel-item" onclick="switchChannel('${serverId}', 'random')"># random</div>
+            `;
+            switchChannel(serverId, 'general');
+        }
+
+        window.switchChannel = function(serverId, channelName) {
+            currentChannel = channelName;
+            document.getElementById('current-channel-title').innerText = `# ${channelName}`;
+            document.getElementById('message-input').placeholder = `Napisz coś na #${channelName}...`;
+            
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.innerText.includes(channelName)) item.classList.add('active');
+            });
+
+            loadMessages(serverId, channelName);
+        }
+
+        function loadMessages(serverId, channelName) {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = '';
+
+            if (messageUnsubscribe) messageUnsubscribe();
+
+            const q = query(collection(db, "servers", serverId, "channels", channelName, "messages"), orderBy("createdAt", "asc"));
+
+            messageUnsubscribe = onSnapshot(q, (snapshot) => {
+                messagesContainer.innerHTML = '';
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    const time = msg.createdAt ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'wysyłanie...';
+                    
+                    const msgEl = document.createElement('div');
+                    msgEl.className = 'message';
+                    msgEl.innerHTML = `
+                        <div class="message-header">
+                            <span class="message-author">${escapeHtml(msg.author)}</span>
+                            <span class="message-time">${time}</span>
+                        </div>
+                        <div class="message-content">${escapeHtml(msg.text)}</div>
+                    `;
+                    messagesContainer.appendChild(msgEl);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
+
+        window.handleKeyPress = async function(event) {
+            if (event.key === 'Enter' && currentView !== 'dm') {
+                const input = document.getElementById('message-input');
+                const text = input.value.trim();
+                if (text === "") return;
+
+                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+                const username = userDoc.exists() ? userDoc.data().username : "User";
+
+                try {
+                    await addDoc(collection(db, "servers", currentView, "channels", currentChannel, "messages"), {
+                        text: text,
+                        author: username,
+                        createdAt: serverTimestamp()
+                    });
+                    input.value = "";
+                } catch (e) {
+                    console.error("Błąd wysyłania: ", e);
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
